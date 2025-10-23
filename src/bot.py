@@ -14,19 +14,27 @@ llm = LLM(debug=True)
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
+async def generate_message_history(channel):
+    history = []
+    async for message in channel.history():
+        if message.author == bot.user:
+            history.append({"role": "assistant", "content": message.content})
+        else:
+            history.append({"role": "user", "content": f"[{message.author}] {message.content}"})
+    history.reverse()
+    return history
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Check if message is in a DM
     if isinstance(message.channel, discord.DMChannel):
-        print(f"Received DM from {message.author}: {message.content}")
-        
+        history = await generate_message_history(message.channel)
+        await llm.load_memory(history)
+        print(history)
         response = await llm.generate(prompt=message.content, speaker=str(message.author.name))
         await message.channel.send(response)
 
-    # Process commands normally in servers
-    await bot.process_commands(message)
-
-bot.run("TOKEN HERE")
+if __name__ == "__main__":
+    bot.run("TOKEN")

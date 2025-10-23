@@ -13,8 +13,9 @@ class LLM():
         with open(general_instruction_path, "r") as f:
             self.general_instruction = f.read().strip()
 
-        self.model_name = "PATH"
+        self.model_name = "src/model"
         self.debug = debug
+        self.conversation_history = []
 
 
         # Loading Stuff
@@ -34,13 +35,20 @@ class LLM():
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model.eval()
 
+    async def load_memory(self, memory: list[dict]) -> None:
+        """
+        Load conversation history into the model's context.
+        """
+        self.conversation_history = memory
+
     async def generate(self, prompt: str, speaker: str) -> str:
         """
         Generate text based on the provided prompt.
         """
         messages = [
             {"role": "system", "content": self.general_instruction},
-            {"role": "user", "content": f"[{speaker}] {prompt}"}
+        ] + self.conversation_history + [
+            {"role": "user", "content": f"{speaker}: {prompt}"},
         ]
         prompt = self.tokenizer.apply_chat_template(
                 messages,
