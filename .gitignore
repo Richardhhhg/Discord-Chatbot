@@ -1,0 +1,3 @@
+src/model/*
+system_prompt.txt
+__pycache__/
